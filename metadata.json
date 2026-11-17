@@ -1,0 +1,6 @@
+{
+  "name": "RallyUltra — Pickleball Watch & BLE Sync",
+  "description": "Arquitectura de software y simulador en tiempo real para llevar la puntuación de Pickleball en Samsung Galaxy Watch Ultra con sincronización Bluetooth hacia smartphone emparejado.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
