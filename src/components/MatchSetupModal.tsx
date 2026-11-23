@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X } from 'lucide-react';
 import type {
   MatchConfig,
   MatchFormat,
   QuickButtonAction,
   ScoringRule,
+  TeamId,
 } from '../engine/pickleball';
 
 interface MatchSetupModalProps {
@@ -29,7 +30,23 @@ export const MatchSetupModal: React.FC<MatchSetupModalProps> = ({
   const [quickButtonAction, setQuickButtonAction] = useState<QuickButtonAction>(
     initialConfig.quickButtonAction
   );
+  const [initialServingTeam, setInitialServingTeam] = useState<TeamId>(
+    initialConfig.initialServingTeam
+  );
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    setTeamAName(initialConfig.teamAName);
+    setTeamBName(initialConfig.teamBName);
+    setFormat(initialConfig.format);
+    setScoringRule(initialConfig.scoringRule);
+    setTargetPoints(initialConfig.targetPoints);
+    setBestOfSets(initialConfig.bestOfSets);
+    setQuickButtonAction(initialConfig.quickButtonAction);
+    setInitialServingTeam(initialConfig.initialServingTeam);
+    setError(null);
+  }, [initialConfig, isOpen]);
 
   if (!isOpen) return null;
 
@@ -51,6 +68,7 @@ export const MatchSetupModal: React.FC<MatchSetupModalProps> = ({
       targetPoints,
       bestOfSets,
       quickButtonAction,
+      initialServingTeam,
     });
   };
 
@@ -206,20 +224,50 @@ export const MatchSetupModal: React.FC<MatchSetupModalProps> = ({
             </div>
           </div>
 
-          <div>
-            <label htmlFor="quick-button-select" className="block text-xs font-medium text-slate-700">
-              Botón Rápido Naranja (Galaxy Watch Ultra)
-            </label>
-            <select
-              id="quick-button-select"
-              value={quickButtonAction}
-              onChange={(e) => setQuickButtonAction(e.target.value as QuickButtonAction)}
-              className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 focus:border-orange-600 focus:outline-none"
-            >
-              <option value="point_my_team">Sumar punto / jugada a Nosotros</option>
-              <option value="side_out">Registrar falta de saque (Side-Out)</option>
-              <option value="undo">Deshacer última jugada</option>
-            </select>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <span className="block text-xs font-medium text-slate-700">Primer saque</span>
+              <div className="mt-1.5 grid grid-cols-2 gap-1 rounded-lg bg-slate-100 p-1">
+                <button
+                  type="button"
+                  onClick={() => setInitialServingTeam('A')}
+                  className={`truncate rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                    initialServingTeam === 'A'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {teamAName.trim() || 'Equipo A'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setInitialServingTeam('B')}
+                  className={`truncate rounded-md px-2 py-1.5 text-xs font-medium transition-colors ${
+                    initialServingTeam === 'B'
+                      ? 'bg-white text-slate-900 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  {teamBName.trim() || 'Equipo B'}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="quick-button-select" className="block text-xs font-medium text-slate-700">
+                Botón Rápido Naranja
+              </label>
+              <select
+                id="quick-button-select"
+                value={quickButtonAction}
+                onChange={(e) => setQuickButtonAction(e.target.value as QuickButtonAction)}
+                className="mt-1.5 w-full rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-900 focus:border-orange-600 focus:outline-none"
+              >
+                <option value="point_my_team">Sumar punto a Nosotros</option>
+                <option value="side_out">Falta de saque (Side-Out)</option>
+                <option value="undo">Deshacer última jugada</option>
+              </select>
+            </div>
           </div>
 
           {error && (

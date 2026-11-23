@@ -5,6 +5,7 @@ import {
   formatWatchCallout,
   recordServeFault,
   recordTeamRallyWin,
+  switchInitialServingTeam,
   undoLastAction,
   type MatchConfig,
 } from './pickleball';
@@ -24,6 +25,7 @@ const doublesConfig: MatchConfig = {
   targetPoints: 11,
   bestOfSets: 1,
   quickButtonAction: 'point_my_team',
+  initialServingTeam: 'A',
 };
 
 const singlesConfig: MatchConfig = {
@@ -147,4 +149,24 @@ test('offline BLE outbox queues packets when disconnected and flushes on reconne
   const { flushedCount, updatedFrames } = flushOutboxFrames([f1, f2]);
   assert.equal(flushedCount, 2);
   assert.equal(updatedFrames.every((f) => f.status === 'acked'), true);
+});
+
+test('supports starting serve with team B and switching initial server before first rally', () => {
+  const bStarts = createInitialMatchState(
+    { ...doublesConfig, initialServingTeam: 'B' },
+    1000
+  );
+  assert.equal(bStarts.servingTeam, 'B');
+  assert.equal(bStarts.serverNumber, 2);
+  assert.equal(formatWatchCallout(bStarts), '0 - 0 - 2');
+
+  const switchedToA = switchInitialServingTeam(bStarts, 1500);
+  assert.equal(switchedToA.servingTeam, 'A');
+  assert.equal(switchedToA.seq, 2);
+
+  // After a rally is played, switching initial server is blocked
+  const afterPoint = recordTeamRallyWin(switchedToA, 'A', 2000);
+  const blocked = switchInitialServingTeam(afterPoint, 2500);
+  assert.equal(blocked.servingTeam, 'A');
+  assert.equal(blocked.scoreA, 1);
 });

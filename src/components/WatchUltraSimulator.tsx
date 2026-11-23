@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Lock, RotateCcw, Unlock, SunDim, Bluetooth, BluetoothOff } from 'lucide-react';
+import {
+  ArrowLeftRight,
+  Lock,
+  RotateCcw,
+  Unlock,
+  SunDim,
+  Bluetooth,
+  BluetoothOff,
+} from 'lucide-react';
 import {
   formatWatchCallout,
   type PickleballMatchState,
@@ -15,6 +23,7 @@ interface WatchUltraSimulatorProps {
   onScoreTeam: (team: TeamId) => void;
   onServeFault: () => void;
   onUndo: () => void;
+  onSwitchInitialServe: () => void;
   onQuickButton: () => void;
   onSaveMatch: () => void;
   onRematch: () => void;
@@ -30,6 +39,7 @@ export const WatchUltraSimulator: React.FC<WatchUltraSimulatorProps> = ({
   onScoreTeam,
   onServeFault,
   onUndo,
+  onSwitchInitialServe,
   onQuickButton,
   onSaveMatch,
   onRematch,
@@ -97,9 +107,27 @@ export const WatchUltraSimulator: React.FC<WatchUltraSimulatorProps> = ({
             </button>
           </div>
         </div>
-        <p className="text-xs text-slate-500">
-          Wear OS 5 · Pantalla AMOLED 480×480px · Botón Rápido activo
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+          <span>Wear OS 5 · AMOLED 480×480px · Botón Rápido activo</span>
+          {matchState.ralliesPlayed === 0 && !matchState.isMatchOver && (
+            <button
+              type="button"
+              data-testid="switch-initial-serve-toolbar"
+              onClick={onSwitchInitialServe}
+              disabled={sweatLock}
+              className="inline-flex items-center gap-1.5 font-medium text-orange-600 hover:text-orange-700 disabled:opacity-40 whitespace-nowrap"
+            >
+              <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden="true" />
+              <span>
+                Cambiar primer saque (
+                {matchState.servingTeam === 'A'
+                  ? matchState.config.teamBName
+                  : matchState.config.teamAName}
+                )
+              </span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Watch Hardware Frame */}
@@ -306,27 +334,43 @@ export const WatchUltraSimulator: React.FC<WatchUltraSimulatorProps> = ({
               )}
 
               {/* Bottom Watch Controls */}
-              <div className="flex w-full items-center justify-center gap-2 pb-1">
+              <div className="flex w-full items-center justify-center gap-1.5 px-4 pb-1">
                 <button
                   type="button"
                   data-testid="watch-fault-btn"
                   onClick={onServeFault}
                   disabled={sweatLock || matchState.isMatchOver}
-                  className="min-h-[38px] rounded-xl border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-xs font-medium text-slate-100 transition-colors hover:bg-slate-700 active:scale-[0.97] disabled:opacity-40 whitespace-nowrap"
+                  className="min-h-[34px] rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 py-1 text-[11px] font-medium text-slate-100 transition-colors hover:bg-slate-700 active:scale-[0.97] disabled:opacity-40 whitespace-nowrap"
                 >
-                  Falta de saque
+                  Falta
                 </button>
-                <button
-                  type="button"
-                  data-testid="watch-undo-btn"
-                  onClick={onUndo}
-                  disabled={sweatLock || matchState.historyStack.length === 0}
-                  aria-label="Deshacer último punto"
-                  className="inline-flex min-h-[38px] items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-3 py-1.5 text-xs font-medium text-slate-100 transition-colors hover:bg-slate-700 active:scale-[0.97] disabled:opacity-40 whitespace-nowrap"
-                >
-                  <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                  <span>Deshacer</span>
-                </button>
+                {matchState.ralliesPlayed === 0 &&
+                matchState.historyStack.length === 0 &&
+                !matchState.isMatchOver ? (
+                  <button
+                    type="button"
+                    data-testid="watch-switch-serve-btn"
+                    onClick={onSwitchInitialServe}
+                    disabled={sweatLock}
+                    aria-label="Cambiar equipo que comienza sacando"
+                    className="inline-flex min-h-[34px] items-center gap-1 rounded-xl border border-orange-500/50 bg-orange-500/15 px-2.5 py-1 text-[11px] font-medium text-orange-200 transition-colors hover:bg-orange-500/25 active:scale-[0.97] disabled:opacity-40 whitespace-nowrap"
+                  >
+                    <ArrowLeftRight className="h-3 w-3" aria-hidden="true" />
+                    <span>1er saque</span>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    data-testid="watch-undo-btn"
+                    onClick={onUndo}
+                    disabled={sweatLock || matchState.historyStack.length === 0}
+                    aria-label="Deshacer último punto"
+                    className="inline-flex min-h-[34px] items-center gap-1 rounded-xl border border-slate-700 bg-slate-800/90 px-2.5 py-1 text-[11px] font-medium text-slate-100 transition-colors hover:bg-slate-700 active:scale-[0.97] disabled:opacity-40 whitespace-nowrap"
+                  >
+                    <RotateCcw className="h-3 w-3" aria-hidden="true" />
+                    <span>Deshacer</span>
+                  </button>
+                )}
               </div>
 
               {/* Sweat Lock Overlay */}

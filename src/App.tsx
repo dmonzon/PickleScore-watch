@@ -19,6 +19,7 @@ import {
   createInitialMatchState,
   recordServeFault,
   recordTeamRallyWin,
+  switchInitialServingTeam,
   undoLastAction,
   type MatchConfig,
   type MatchEventType,
@@ -35,6 +36,7 @@ const DEFAULT_CONFIG: MatchConfig = {
   targetPoints: 11,
   bestOfSets: 1,
   quickButtonAction: 'point_my_team',
+  initialServingTeam: 'A',
 };
 
 const HISTORY_STORAGE_KEY = 'rallyultra_match_history_v1';
@@ -134,6 +136,16 @@ export default function App() {
     const next = undoLastAction(watchState);
     if (next === watchState) return;
     commitWatchTransition(next, 'UNDO', 'Deshacer jugada');
+  }, [commitWatchTransition, watchState]);
+
+  const handleSwitchInitialServe = useCallback(() => {
+    const next = switchInitialServingTeam(watchState);
+    if (next === watchState) return;
+    const teamName =
+      next.servingTeam === 'A'
+        ? next.config.teamAName
+        : next.config.teamBName;
+    commitWatchTransition(next, 'INIT', `Primer saque: ${teamName}`);
   }, [commitWatchTransition, watchState]);
 
   const handleQuickButton = useCallback(() => {
@@ -283,6 +295,7 @@ export default function App() {
                   onScoreTeam={handleScoreTeam}
                   onServeFault={handleServeFault}
                   onUndo={handleUndo}
+                  onSwitchInitialServe={handleSwitchInitialServe}
                   onQuickButton={handleQuickButton}
                   onSaveMatch={handleSaveMatch}
                   onRematch={() =>

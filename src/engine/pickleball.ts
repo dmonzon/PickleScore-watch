@@ -23,6 +23,7 @@ export interface MatchConfig {
   targetPoints: 11 | 15 | 21;
   bestOfSets: 1 | 3;
   quickButtonAction: QuickButtonAction;
+  initialServingTeam: TeamId;
 }
 
 export interface TimelineEntry {
@@ -65,10 +66,14 @@ export function createInitialMatchState(
   now = Date.now()
 ): PickleballMatchState {
   const initialServerNumber: 1 | 2 = config.format === 'doubles' ? 2 : 1;
+  const startingTeam: TeamId = config.initialServingTeam ?? 'A';
+  const startingTeamName =
+    startingTeam === 'A' ? config.teamAName : config.teamBName;
+
   const initialSnapshot: MatchSnapshot = {
     scoreA: 0,
     scoreB: 0,
-    servingTeam: 'A',
+    servingTeam: startingTeam,
     serverNumber: initialServerNumber,
     serverSide: 'right',
     setsWonA: 0,
@@ -83,7 +88,10 @@ export function createInitialMatchState(
 
   return {
     ...initialSnapshot,
-    config,
+    config: {
+      ...config,
+      initialServingTeam: startingTeam,
+    },
     startedAt: now,
     historyStack: [],
     timeline: [
@@ -91,13 +99,51 @@ export function createInitialMatchState(
         seq: 1,
         timestamp: now,
         eventType: 'INIT',
-        description: `Inicio del partido (${config.format === 'doubles' ? 'Dobles' : 'Individuales'} · A ${config.targetPoints})`,
+        description: `Inicio (${config.format === 'doubles' ? 'Dobles' : 'Individuales'} · A ${config.targetPoints} · Saca ${startingTeamName})`,
         scoreA: 0,
         scoreB: 0,
-        servingTeam: 'A',
+        servingTeam: startingTeam,
         serverNumber: initialServerNumber,
         serverSide: 'right',
       },
+    ],
+  };
+}
+
+export function switchInitialServingTeam(
+  state: PickleballMatchState,
+  now = Date.now()
+): PickleballMatchState {
+  if (state.ralliesPlayed > 0 || state.isMatchOver) {
+    return state;
+  }
+
+  const nextTeam: TeamId = state.servingTeam === 'A' ? 'B' : 'A';
+  const nextTeamName =
+    nextTeam === 'A' ? state.config.teamAName : state.config.teamBName;
+  const nextSeq = state.seq + 1;
+
+  return {
+    ...state,
+    servingTeam: nextTeam,
+    config: {
+      ...state.config,
+      initialServingTeam: nextTeam,
+    },
+    seq: nextSeq,
+    timeline: [
+      {
+        seq: nextSeq,
+        timestamp: now,
+        eventType: 'INIT',
+        description: `Saque inicial cambiado a ${nextTeamName}`,
+        scoreA: state.scoreA,
+        scoreB: state.scoreB,
+        servingTeam: nextTeam,
+        serverNumber: state.serverNumber,
+        serverSide: state.serverSide,
+      },
+      ...state.timeline,
     ],
   };
 }
